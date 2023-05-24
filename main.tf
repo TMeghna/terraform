@@ -7,8 +7,10 @@ resource "aws_instance" "web" {
   instance_type   = "t2.micro"
   security_groups = [aws_security_group.dynamicwebtraffic.name]
 }
-//elatic IP address - that ip address won't change when that instance is restarted so
-// its useful when we have a web server pointing to that public ip
+
+# elatic IP address - so that ip address of a aws_instance won't change when that instance is redeployed so 
+# its useful when we have a web server pointing to that public ip
+# this will create a eip for our aws_instance: web
 resource "aws_eip" "elasticip" {
   instance = aws_instance.web.id
 }
@@ -16,9 +18,10 @@ output "eip" {
   value = aws_eip.elasticip.public_ip
 }
 
-//security group - stateful firewall to allow ports in and ports out (inbound and outbound)
+# security group - stateful firewall to allow ports in and ports out (inbound and outbound rules)
 resource "aws_security_group" "webtraffic" {
   name = "allow HTTPS"
+  # inbound rule
   ingress {
     from_port   = 443
     to_port     = 443
@@ -26,6 +29,7 @@ resource "aws_security_group" "webtraffic" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+# outbound rule
   egress {
     from_port   = 443
     to_port     = 443
@@ -34,7 +38,6 @@ resource "aws_security_group" "webtraffic" {
   }
 }
 
-//dynamic blocks - iterate over lists when you want to set while running
 variable "ingressports" {
   type    = list(number)
   default = [80, 443]
@@ -45,6 +48,7 @@ variable "egressports" {
   default = [80, 443, 25]
 }
 
+//this security group uses "dynamic blocks" - iterate over lists when you want to set the values dynamically
 resource "aws_security_group" "dynamicwebtraffic" {
   name = "allow HTTPS several ports"
   dynamic "ingress" {
@@ -67,7 +71,6 @@ resource "aws_security_group" "dynamicwebtraffic" {
       protocol    = "tcp"
       cidr_blocks = ["0.0.0.0/0"]
     }
-
   }
 }
 
